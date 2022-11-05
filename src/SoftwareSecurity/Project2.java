@@ -133,6 +133,23 @@ public class Project2 {
 
 
         //File type 2
+        String hashedPasswordString = hashPasswordFile2(password);
+
+        //Combining the username and password into one string and sending it to file
+        String hashedFileInfo = String.join(" : ", username, hashedPasswordString);
+        saveInformation("hashed", hashedFileInfo);
+
+
+        //File type 3
+        String saltFileInfo = newSaltUser(username, password);
+        saveInformation("salt", saltFileInfo);
+
+    }
+
+
+    public String hashPasswordFile2(String passwordPlain)
+            throws InvalidKeyException, IllegalBlockSizeException, BadPaddingException, UnsupportedEncodingException
+    {
         SecureRandom secureRandom = new SecureRandom();
         int keyBitSize = 256;
         keyGenerator.init(keyBitSize, secureRandom);
@@ -140,23 +157,21 @@ public class Project2 {
         SecretKey hashedKey = keyGenerator.generateKey();
         cipher.init(Cipher.ENCRYPT_MODE, hashedKey);
 
+                //System.out.println("Before byte conversion: " + passwordPlain);
         //Changing password into byte array and encrypting it
-        byte[] passwordBytes = password.getBytes("UTF-8");
+        byte[] passwordBytes = passwordPlain.getBytes("UTF-8");
+                //System.out.println("Before encryption: " + passwordBytes);
         byte[] hashedPassword = cipher.doFinal(passwordBytes);
+
+                //System.out.println("After encryption: " + hashedPassword);
+
 
         //Changing encrypted byte array password into string
         String hashedPasswordString = new String(hashedPassword, StandardCharsets.ISO_8859_1);
-
-        //Combining the username and password into one string and sending it to file
-        String hashedFileInfo = String.join(" : ", username, hashedPasswordString);
-        saveInformation("hashed", hashedFileInfo);
+              //System.out.println("After conversion to string: " + hashedPasswordString);
 
 
-
-        //File type 3
-        String saltFileInfo = newSaltUser(username, password);
-        saveInformation("salt", saltFileInfo);
-
+        return hashedPasswordString;
     }
 
 
@@ -170,12 +185,14 @@ public class Project2 {
         username = getUsername();
         password = getPassword();
 
-        //byte[] passwordByte = password.getBytes();
+        //Hashing the input password to check against hashed password in file22
+        String hashedPasswordInput = hashPasswordFile2(password);
+        System.out.println("Output from authenticate hashing given password: " + hashedPasswordInput);     //Just for testing
+        //byte[] hashedPasswordInput = hashPasswordFile2(password);
 
-        //NEED TO HASH THE SECOND AND THIRD BEFORE CHECKING
 
         boolean firstFile = checkInformation("plaintext", username, password);
-        boolean secondFile = checkInformation("hashed", username, password);           //All WERE passwordByte getting passed
+        boolean secondFile = checkInformation("hashed", username, hashedPasswordInput);           //All WERE passwordByte getting passed
         boolean thirdFile = checkInformation("salt", username, password);
 
         if(firstFile)
@@ -300,6 +317,7 @@ public class Project2 {
     }
 
 
+
     //New saveInformation Method
     public void saveInformation(String fileName, String userInfoString){
         FileWriter fw = null;
@@ -330,53 +348,98 @@ public class Project2 {
     }
 
 
+//    public boolean checkHashedFile(String fileName, String usernameInput, byte[] passwordInput) throws Exception
+//    {
+//        boolean match = false;
+//
+//        int lineNum = 0;
+//        BufferedReader reader;
+//        reader = new BufferedReader(new FileReader(fileName));
+//        String line = reader.readLine();
+//        while(line != null)
+//        {
+//            String compareString = String.join(" : ", usernameInput, passwordInput);
+//            if(line.equalsIgnoreCase(compareString))
+//            {
+//                match = true;
+//                break;
+//            }
+//            else
+//            {
+//                line = reader.readLine();
+//                match = false;
+//            }
+//        }
+//        reader.close();
+//
+//        return match;
+//    }
 
 
 
     public boolean checkInformation(String fileName, String usernameInput, String passwordInput) throws Exception {
         Scanner scanner = new Scanner(fileName);
+        //New file reading version
+        BufferedReader reader;
+
+        System.out.println("Inside of checkInformation");    //Just for testing
 
         boolean exists = false;
         int lineNum = 0;
-        while(scanner.hasNextLine()) {
-            String line = scanner.nextLine();
-            lineNum++;
-            if(line.equalsIgnoreCase(String.join(" : ", usernameInput, passwordInput)))
-            {
-                exists = true;
-            }
-            else
-                exists = false;
-        }
-
-
-        //Authenticating for salt file
-        if(fileName.equals("salt"))
+        if(fileName.equals("plaintext") || fileName.equals("hashed"))        //Checking plaintext or hashed file
         {
-            while(scanner.hasNextLine()) {
-
-                String line = scanner.nextLine();
-                lineNum++;
-                if(line.contains(usernameInput))
+            reader = new BufferedReader(new FileReader(fileName));
+            String line = reader.readLine();
+            while(line != null)
+            {
+                String compareString = String.join(" : ", usernameInput, passwordInput);
+                if(line.equalsIgnoreCase(compareString))
                 {
-                    //Splits the line into the username, salt, and hashed, salted password
-                    String[] userInfo = Pattern.compile(" : ").split(line, 3);
-                    //Takes the salt
-                    String salt = userInfo[2];
-                    //Calculating the given password with the salt from the file
-                    String calculatedHash = getEncryptedPassword(passwordInput, salt);
-                    if(Objects.equals(salt, calculatedHash))
-                    {
-
-                    }
+                    exists = true;
+                    break;
+                }
+                else
+                {
+                    line = reader.readLine();
+                    exists = false;
                 }
             }
+            reader.close();
+        } else    //Checking salt file
+        {
+            reader = new BufferedReader(new FileReader(fileName));
+            String line = reader.readLine();
+            while (line != null) {
+                String[] userInfo = Pattern.compile(" : ").split(line, 3);
+                String userNameFromFile = userInfo[0];
+
+                if (userNameFromFile.equalsIgnoreCase(usernameInput)) {
+                    //Takes the salt
+                    String salt = userInfo[1];
+                    System.out.println("Salt from file: " + salt);
+                    //Takes the hashed, salted password
+                    String filePassword = userInfo[2];
+                    System.out.println("Hashed password from salt file: " + filePassword);
+                    //Calculating the given password with the salt from the file
+                    String calculatedHash = getEncryptedPassword(passwordInput, salt);
+                    System.out.println("New hashed password from user input and salt from file: " + calculatedHash);
+                    if (filePassword.equals(calculatedHash)) {
+                        exists = true;
+                        break;
+                    }
+                } else {
+                    line = reader.readLine();
+                    exists = false;
+                }
+            }
+            reader.close();
         }
 
         if(exists)
             return true;
         else
             return false;
+
     }
 
 
