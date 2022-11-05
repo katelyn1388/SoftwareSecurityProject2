@@ -5,6 +5,7 @@ package SoftwareSecurity;
 import javax.crypto.*;
 import javax.crypto.spec.PBEKeySpec;
 import java.io.*;
+import java.nio.charset.StandardCharsets;
 import java.security.*;
 import java.security.SecureRandom;
 import java.security.spec.KeySpec;
@@ -13,54 +14,58 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.regex.Pattern;
 
-import static java.util.regex.Pattern.compile;
-
 
 public class Project2 {
-    static Scanner scannerObj = new Scanner(System.in);
+    Scanner scannerObj = new Scanner(System.in);
 
     //Creating a cipher
-    static Cipher cipher;
-    {
-        try {
-            cipher = Cipher.getInstance("AES/CBC/PKCS5Padding");
-        } catch (NoSuchAlgorithmException e) {
-            e.printStackTrace();
-        } catch (NoSuchPaddingException e) {
-            e.printStackTrace();
-        }
+//    Cipher cipher;
+//    {
+//        try {
+//            cipher = Cipher.getInstance("AES/CBC/PKCS5Padding");
+//        } catch (NoSuchAlgorithmException e) {
+//            e.printStackTrace();
+//        } catch (NoSuchPaddingException e) {
+//            e.printStackTrace();
+//        }
+//    }
+    Cipher cipher = Cipher.getInstance("AES/CBC/PKCS5Padding");
+
+
+//    //Creating a key
+//    KeyGenerator keyGenerator;
+//    {
+//        try {
+//            keyGenerator = KeyGenerator.getInstance("AES");
+//        } catch (NoSuchAlgorithmException e) {
+//            e.printStackTrace();
+//        }
+//    }
+
+    KeyGenerator keyGenerator = KeyGenerator.getInstance("AES");
+
+    public Project2() throws NoSuchAlgorithmException, NoSuchPaddingException {
     }
-
-
-    //Creating a key
-    static KeyGenerator keyGenerator;
-    {
-        try {
-            keyGenerator = KeyGenerator.getInstance("AES");
-        } catch (NoSuchAlgorithmException e) {
-            e.printStackTrace();
-        }
-    }
-
 
 
     public static void main(String[] args) throws Exception {
-        int choice = actionQuestion();
+        Project2 projectObject = new Project2();
+        int choice = projectObject.actionQuestion();
 
         if(choice == 1)
         {
-            newAccountQuestions();
+            projectObject.newAccountQuestions();
         }
         if(choice == 2)
         {
-            authenticate();
+            projectObject.authenticate();
         }
     }
 
 
 
     //Asking user what they want to do
-    public static int actionQuestion() throws NumberFormatException {
+    public int actionQuestion() throws NumberFormatException {
         boolean validInput;
         String choiceInput;
         int choiceTest = 0;
@@ -79,11 +84,8 @@ public class Project2 {
                 System.out.println("Invalid input, " + choiceInput + " is not a valid number");
             }
 
-            if(choiceInput == "1" || choiceInput == "2")
-            {
+            if(choiceInput.equals("1") || choiceInput.equals("2"))
                 validInput = true;
-                choiceReal = 1;
-            }
             else
             {
                 validInput = false;
@@ -101,10 +103,8 @@ public class Project2 {
 
 
 
-
-
     //Getting desired username and password from user and checking for validity
-    public static void newAccountQuestions() throws Exception {
+    public void newAccountQuestions() throws Exception {
         String username, password = null;
 
         System.out.println("Your username must be 10 alphabetic characters or less");
@@ -125,93 +125,33 @@ public class Project2 {
 
 
     //Save new account information to files
-    public static void newAccountCreation(String username, String password) throws Exception {
+    public void newAccountCreation(String username, String password) throws Exception {
 
         //File type 1
-        //byte[] passwordPlain = password.getBytes();
         String plaintextFileInfo = String.join(" : ", username, password);
         saveInformation("plaintext", plaintextFileInfo);
 
 
-        //File type 2 - Need to add something
+        //File type 2
+        SecureRandom secureRandom = new SecureRandom();
+        int keyBitSize = 256;
+        keyGenerator.init(keyBitSize, secureRandom);
 
-        String hashedFileInfo = String.join(" : ", username, password);
+        SecretKey hashedKey = keyGenerator.generateKey();
+        cipher.init(Cipher.ENCRYPT_MODE, hashedKey);
+
+        //Changing password into byte array and encrypting it
+        byte[] passwordBytes = password.getBytes("UTF-8");
+        byte[] hashedPassword = cipher.doFinal(passwordBytes);
+
+        //Changing encrypted byte array password into string
+        String hashedPasswordString = new String(hashedPassword, StandardCharsets.ISO_8859_1);
+
+        //Combining the username and password into one string and sending it to file
+        String hashedFileInfo = String.join(" : ", username, hashedPasswordString);
         saveInformation("hashed", hashedFileInfo);
 
 
-        //Commented out for testing  -  file2
-
-//        SecureRandom secureRandom = new SecureRandom();
-//        int keyBitSize = 256;
-//        keyGenerator.init(keyBitSize, secureRandom);
-
-//        //Generating the password key for the second file type
-//        SecretKey hashedKey = keyGenerator.generateKey();
-//        try {
-//            cipher.init(Cipher.ENCRYPT_MODE, hashedKey);
-//        } catch (InvalidKeyException e) {
-//            e.printStackTrace();
-//        }
-
-
-
-
-        //Way of doing file3 before quickprogrammingtips.com
-//        //Generating the password key for the third file type
-//        SecretKey saltKey = keyGenerator.generateKey();
-//        try {
-//            cipher.init(Cipher.ENCRYPT_MODE, saltKey);
-//        } catch (InvalidKeyException e) {
-//            e.printStackTrace();
-//        }
-
-
-//        //Saving the information to the hashed password file
-//        byte[] passwordByte = new byte[0];
-//        try {
-//            passwordByte = password.getBytes("UTF-8");
-//        } catch (UnsupportedEncodingException e) {
-//            e.printStackTrace();
-//        }
-//        byte[] hashedPassword = new byte[0];
-//        try {
-//            hashedPassword = cipher.doFinal(passwordByte);
-//        } catch (IllegalBlockSizeException e) {
-//            e.printStackTrace();
-//        } catch (BadPaddingException e) {
-//            e.printStackTrace();
-//        }
-//
-//        saveInformation("hashed", username, hashedPassword, null);
-
-
-
-//        //Saving the information to the salt file
-//
-//        //Getting a salt value of one byte
-//        byte[] byteSalt = null;
-//        try {
-//            byteSalt = getSalt();
-//        } catch (NoSuchAlgorithmException ex) {
-//            System.out.println("Exception thrown while trying to create salt in newAccountCreation");
-//        }
-//
-//        //Hashing the salt/password mix
-//        byte[] saltedPassword = getSaltedPassword(password, byteSalt);
-//        byte[] hashedSaltedPassword = new byte[0];
-//        try {
-//            hashedSaltedPassword = cipher.doFinal(saltedPassword);
-//        } catch (IllegalBlockSizeException e) {
-//            e.printStackTrace();
-//        } catch (BadPaddingException e) {
-//            e.printStackTrace();
-//        }
-//
-//        saveInformation("salt", username, hashedSaltedPassword, byteSalt);
-
-
-
-        //New way
 
         //File type 3
         String saltFileInfo = newSaltUser(username, password);
@@ -224,11 +164,10 @@ public class Project2 {
 
 
     //Authenticating username and password of user
-    public static void authenticate() throws Exception {
+    public void authenticate() throws Exception {
         String username, password;
 
         username = getUsername();
-
         password = getPassword();
 
         //byte[] passwordByte = password.getBytes();
@@ -236,7 +175,6 @@ public class Project2 {
         //NEED TO HASH THE SECOND AND THIRD BEFORE CHECKING
 
         boolean firstFile = checkInformation("plaintext", username, password);
-        System.out.println(firstFile);
         boolean secondFile = checkInformation("hashed", username, password);           //All WERE passwordByte getting passed
         boolean thirdFile = checkInformation("salt", username, password);
 
@@ -266,14 +204,11 @@ public class Project2 {
             System.out.println("Logging into file 3 failed");
         }
 
-
-
-
     }
 
 
 
-    public static String getUsername(){
+    public String getUsername(){
         String username;
         boolean goodUsername;
         do{
@@ -300,7 +235,7 @@ public class Project2 {
 
 
 
-    public static String getPassword(){
+    public String getPassword(){
         String password;
         boolean goodPassword;
         do{
@@ -328,7 +263,7 @@ public class Project2 {
 
 
     //Modified newUser
-    private static String newSaltUser(String userName, String password) throws Exception {
+    private String newSaltUser(String userName, String password) throws Exception {
         String newUserString;
 
         String salt = getSalt2();
@@ -341,7 +276,7 @@ public class Project2 {
 
 
     //Second type of getSalt from quickprogrammingtips.com
-    public static String getSalt2() throws NoSuchAlgorithmException {
+    public String getSalt2() throws NoSuchAlgorithmException {
         SecureRandom secureRandom = SecureRandom.getInstance("SHA1PRNG");
         byte[] salt = new byte[1];
         secureRandom.nextBytes(salt);
@@ -351,7 +286,7 @@ public class Project2 {
 
     //Taken from quickprogrammingtips.com
     //Gets the password/salt mix
-    public static String getEncryptedPassword(String password, String salt) throws Exception{
+    public String getEncryptedPassword(String password, String salt) throws Exception{
         String algorithm = "PBKDF2WithHmacSHA1";
         int derivedKeyLength = 160;
         int iterations = 10000;
@@ -366,7 +301,7 @@ public class Project2 {
 
 
     //New saveInformation Method
-    public static void saveInformation(String fileName, String userInfoString){
+    public void saveInformation(String fileName, String userInfoString){
         FileWriter fw = null;
         BufferedWriter bw = null;
         PrintWriter pw = null;
@@ -398,7 +333,7 @@ public class Project2 {
 
 
 
-    public static boolean checkInformation(String fileName, String usernameInput, String passwordInput) throws Exception {
+    public boolean checkInformation(String fileName, String usernameInput, String passwordInput) throws Exception {
         Scanner scanner = new Scanner(fileName);
 
         boolean exists = false;
