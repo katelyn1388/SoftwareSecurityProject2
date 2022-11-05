@@ -60,18 +60,30 @@ public class Project2 {
 
 
     //Asking user what they want to do
-    public static int actionQuestion(){
+    public static int actionQuestion() throws NumberFormatException {
         boolean validInput;
-        int choice = 0;
+        String choiceInput;
+        int choiceTest = 0;
+        int choiceReal = 0;
+
 
         do{
             System.out.println("Would you like to 1. create a new account or 2. authenticate?");
-            System.out.println("Enter 1 or 2: ");
+            System.out.println("Please enter 1 or 2: ");
 
-            choice = scannerObj.nextInt();
-            scannerObj.nextLine();
-            if(choice == 1 || choice == 2)
+            choiceInput = scannerObj.nextLine();
+            try{
+                choiceTest = Integer.parseInt(choiceInput.trim());
+                break;
+            }catch (NumberFormatException ex){
+                System.out.println("Invalid input, " + choiceInput + " is not a valid number");
+            }
+
+            if(choiceInput == "1" || choiceInput == "2")
+            {
                 validInput = true;
+                choiceReal = 1;
+            }
             else
             {
                 validInput = false;
@@ -79,7 +91,12 @@ public class Project2 {
             }
         }while(!validInput);
 
-        return choice;
+        if(choiceInput.equals("1"))
+            choiceReal = 1;
+        else
+            choiceReal = 2;
+
+        return choiceReal;
     }
 
 
@@ -219,14 +236,14 @@ public class Project2 {
         //NEED TO HASH THE SECOND AND THIRD BEFORE CHECKING
 
         boolean firstFile = checkInformation("plaintext", username, password);
+        System.out.println(firstFile);
         boolean secondFile = checkInformation("hashed", username, password);           //All WERE passwordByte getting passed
         boolean thirdFile = checkInformation("salt", username, password);
 
         if(firstFile)
         {
             System.out.println("Successfully logged into file 1");
-        }
-        else
+        } else
         {
             System.out.println("Logging into file 1 failed");
         }
@@ -235,8 +252,7 @@ public class Project2 {
         if(secondFile)
         {
             System.out.println("Successfully logged into file 2");
-        }
-        else
+        } else
         {
             System.out.println("Logging into file 2 failed");
         }
@@ -245,8 +261,7 @@ public class Project2 {
         if(thirdFile)
         {
             System.out.println("Successfully logged into file 3");
-        }
-        else
+        } else
         {
             System.out.println("Logging into file 3 failed");
         }
@@ -262,7 +277,7 @@ public class Project2 {
         String username;
         boolean goodUsername;
         do{
-            System.out.println("Please enter your desired username: ");
+            System.out.println("Please enter your username: ");
             username = scannerObj.nextLine().trim();
 
             if(username.length() > 10 || username.isBlank())         //Testing username length
@@ -289,7 +304,7 @@ public class Project2 {
         String password;
         boolean goodPassword;
         do{
-            System.out.println("Please enter your desired password: ");
+            System.out.println("Please enter your password: ");
             password = scannerObj.nextLine().trim();
             if(!password.matches("\\d+"))
             {
@@ -311,23 +326,6 @@ public class Project2 {
     }
 
 
-
-
-    //Creating salt value
-    public static byte[] getSalt() throws NoSuchAlgorithmException {
-        SecureRandom secureRandom = SecureRandom.getInstance("SHA1PRNG");
-        byte[] salt = new byte[1];
-        secureRandom.nextBytes(salt);
-        return salt;
-    }
-
-
-
-    //New user from quickprogrammingtips.com
-    private void newUser(String userName, String password) throws Exception {
-        String salt = getSalt2();
-        String encryptedPassword = getEncryptedPassword(password, salt);
-    }
 
     //Modified newUser
     private static String newSaltUser(String userName, String password) throws Exception {
@@ -364,21 +362,6 @@ public class Project2 {
 
         byte[] encBytes = f.generateSecret(spec).getEncoded();
         return Base64.getEncoder().encodeToString(encBytes);
-    }
-
-
-    //Salting the password
-    public static byte[] getSaltedPassword(String password, byte[] salt) {
-        try{
-            MessageDigest md = MessageDigest.getInstance("SHA-512");
-            md.update(salt);
-            byte byteData[] = md.digest(password.getBytes());
-            md.reset();
-            return byteData;
-        } catch (NoSuchAlgorithmException ex) {
-            Logger.getLogger("SHA-512").log(Level.SEVERE, "SHA-512 is not a valid algorithm name", ex);
-            return null;
-        }
     }
 
 
@@ -423,10 +406,12 @@ public class Project2 {
         while(scanner.hasNextLine()) {
             String line = scanner.nextLine();
             lineNum++;
-            if(Objects.equals(line, usernameInput + " : " + passwordInput))
+            if(line.equalsIgnoreCase(String.join(" : ", usernameInput, passwordInput)))
             {
                 exists = true;
             }
+            else
+                exists = false;
         }
 
 
@@ -453,7 +438,7 @@ public class Project2 {
             }
         }
 
-        if(!exists)
+        if(exists)
             return true;
         else
             return false;
