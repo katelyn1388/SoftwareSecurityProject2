@@ -3,20 +3,21 @@
 package SoftwareSecurity;
 
 import javax.crypto.*;
-import javax.crypto.spec.IvParameterSpec;
-import javax.crypto.spec.SecretKeySpec;
+import javax.crypto.spec.PBEKeySpec;
 import java.io.*;
 import java.security.*;
-import java.security.Security;
 import java.security.SecureRandom;
-import java.util.Base64;
-import java.util.Scanner;
+import java.security.spec.KeySpec;
+import java.util.*;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
 
 public class Project2 {
     static Scanner scannerObj = new Scanner(System.in);
+
+    private static Map<String, UserInfo> userDatabase = new HashMap<String,UserInfo>();
+
 
     //Creating a cipher
     static Cipher cipher;
@@ -43,7 +44,7 @@ public class Project2 {
 
 
 
-    public static void main(String[] args) {
+    public static void main(String[] args) throws Exception {
         int choice = actionQuestion();
 
         if(choice == 1)
@@ -86,7 +87,7 @@ public class Project2 {
 
 
     //Getting desired username and password from user and checking for validity
-    public static void newAccountQuestions(){
+    public static void newAccountQuestions() throws Exception {
         boolean happy = false;
         String username, password = null, happyReply;
 
@@ -94,60 +95,10 @@ public class Project2 {
         System.out.println("Your password must only contain numbers (0-9)");
 
         //Getting and checking username
-        boolean goodUsername = false;
-        do{
-            System.out.println("Please enter your desired username: ");
-            username = scannerObj.nextLine().trim();
-
-            if(username.length() > 10 || username.isBlank())         //Testing username length
-            {
-                System.out.println(username);
-                System.out.println("Invalid username: Username must be 10 characters or less and cannot be blank");
-                goodUsername = false;
-                continue;
-            }
-            else if(!username.matches("[a-zA-Z]+"))           //Testing username for alphabetic characters only
-            {
-                System.out.println("Invalid username: Username can only contain alphabetic characters");
-                goodUsername = false;
-                continue;
-            }
-            else
-                goodUsername = true;
-        }while(!goodUsername);
-
-
+        username = getUsername();
 
         //Getting and checking password
-        boolean goodPassword = false;
-        do{
-            System.out.println("Please enter your desired password: ");
-            password = scannerObj.nextLine().trim();
-            if(!password.matches("\\d+"))
-            {
-                System.out.println("Invalid password: Password must be an integer, only containing numbers (0-9)");
-                goodPassword = false;
-                continue;
-            }
-            else if(password.isBlank())
-            {
-                System.out.println("Invalid password: Password cannot be left blank");
-                goodPassword = false;
-                continue;
-            }
-            else
-                goodPassword = true;
-        }while(!goodPassword);
-
-//        System.out.println("Your username is " + username + " and your password is " + password);
-//        System.out.println("Are you happy with this?(y/n)");
-//        happyReply = scannerObj.nextLine();
-//
-//        if(happyReply == "y" || happyReply == "Y" || happyReply == "yes" || happyReply == "Yes")
-//            happy = true;
-//        else
-//            happy = false;
-
+        password = getPassword();
 
         //Sending username and password to file generator method
         newAccountCreation(username, password);
@@ -157,82 +108,90 @@ public class Project2 {
 
 
 
-
     //Save new account information to files
-    public static void newAccountCreation(String username, String password){
+    public static void newAccountCreation(String username, String password) throws Exception {
 
         //Saving account info to the first file type
         byte[] passwordPlain = password.getBytes();
-        saveInformation("plaintext", username, passwordPlain);
-
-        SecureRandom secureRandom = new SecureRandom();
-        int keyBitSize = 256;
-        keyGenerator.init(keyBitSize, secureRandom);
+        saveInformation("plaintext", username, passwordPlain, null);
 
 
-        //Generating the password key for the second file type
-        SecretKey hashedKey = keyGenerator.generateKey();
-        try {
-            cipher.init(Cipher.ENCRYPT_MODE, hashedKey);
-        } catch (InvalidKeyException e) {
-            e.printStackTrace();
-        }
+        //Commented out for testing  -  file2
 
-        //Generating the password key for the third file type
-        SecretKey saltKey = keyGenerator.generateKey();
-        try {
-            cipher.init(Cipher.ENCRYPT_MODE, saltKey);
-        } catch (InvalidKeyException e) {
-            e.printStackTrace();
-        }
+//        SecureRandom secureRandom = new SecureRandom();
+//        int keyBitSize = 256;
+//        keyGenerator.init(keyBitSize, secureRandom);
 
-
-        //Saving the information to the hashed password file
-        byte[] passwordByte = new byte[0];
-        try {
-            passwordByte = password.getBytes("UTF-8");
-        } catch (UnsupportedEncodingException e) {
-            e.printStackTrace();
-        }
-        byte[] hashedPassword = new byte[0];
-        try {
-            hashedPassword = cipher.doFinal(passwordByte);
-        } catch (IllegalBlockSizeException e) {
-            e.printStackTrace();
-        } catch (BadPaddingException e) {
-            e.printStackTrace();
-        }
-
-        saveInformation("hashed", username, hashedPassword);
+//        //Generating the password key for the second file type
+//        SecretKey hashedKey = keyGenerator.generateKey();
+//        try {
+//            cipher.init(Cipher.ENCRYPT_MODE, hashedKey);
+//        } catch (InvalidKeyException e) {
+//            e.printStackTrace();
+//        }
 
 
 
-        //Saving the information to the salt file
 
-        //Getting a salt value of one byte
-        byte[] byteSalt = null;
-        try {
-            byteSalt = getSalt();
-        } catch (NoSuchAlgorithmException ex) {
-            System.out.println("Exception thrown while trying to create salt in newAccountCreation");
-        }
+        //Way of doing file3 before quickprogrammingtips.com
+//        //Generating the password key for the third file type
+//        SecretKey saltKey = keyGenerator.generateKey();
+//        try {
+//            cipher.init(Cipher.ENCRYPT_MODE, saltKey);
+//        } catch (InvalidKeyException e) {
+//            e.printStackTrace();
+//        }
 
-        //Hashing the salt/password mix
-        byte[] saltedPassword = getSaltedPassword(password, byteSalt);
-        byte[] hashedSaltedPassword = new byte[0];
-        try {
-            hashedSaltedPassword = cipher.doFinal(saltedPassword);
-        } catch (IllegalBlockSizeException e) {
-            e.printStackTrace();
-        } catch (BadPaddingException e) {
-            e.printStackTrace();
-        }
 
-        saveInformation("salt", username, hashedSaltedPassword);
+//        //Saving the information to the hashed password file
+//        byte[] passwordByte = new byte[0];
+//        try {
+//            passwordByte = password.getBytes("UTF-8");
+//        } catch (UnsupportedEncodingException e) {
+//            e.printStackTrace();
+//        }
+//        byte[] hashedPassword = new byte[0];
+//        try {
+//            hashedPassword = cipher.doFinal(passwordByte);
+//        } catch (IllegalBlockSizeException e) {
+//            e.printStackTrace();
+//        } catch (BadPaddingException e) {
+//            e.printStackTrace();
+//        }
+//
+//        saveInformation("hashed", username, hashedPassword, null);
 
-        //File plaintextFile = new File("C:\\Users\\Owner\\IdeaProjects\\Software Security Project2\\src\\plaintext");
-        //File hashedFile = new File("C:\\Users\\Owner\\IdeaProjects\\Software Security Project2\\src\\hashed");
-        //File saltFile = new File("C:\\Users\\Owner\\IdeaProjects\\Software Security Project2\\src\\salt");
+
+
+//        //Saving the information to the salt file
+//
+//        //Getting a salt value of one byte
+//        byte[] byteSalt = null;
+//        try {
+//            byteSalt = getSalt();
+//        } catch (NoSuchAlgorithmException ex) {
+//            System.out.println("Exception thrown while trying to create salt in newAccountCreation");
+//        }
+//
+//        //Hashing the salt/password mix
+//        byte[] saltedPassword = getSaltedPassword(password, byteSalt);
+//        byte[] hashedSaltedPassword = new byte[0];
+//        try {
+//            hashedSaltedPassword = cipher.doFinal(saltedPassword);
+//        } catch (IllegalBlockSizeException e) {
+//            e.printStackTrace();
+//        } catch (BadPaddingException e) {
+//            e.printStackTrace();
+//        }
+//
+//        saveInformation("salt", username, hashedSaltedPassword, byteSalt);
+
+
+
+        //New way
+        String saltFileInfo = newSaltUser(username, password);
+        saveInformation("salt", saltFileInfo);
+
     }
 
 
@@ -240,12 +199,12 @@ public class Project2 {
 
 
     //Authenticating username and password of user
-    public static void authenticate(){
+    public static void authenticate() throws Exception {
         String username, password;
-        System.out.println("Please give me your username: ");
-        username = scannerObj.nextLine();
-        System.out.println("Please enter your password: ");
-        password = scannerObj.nextLine();
+
+        username = getUsername();
+
+        password = getPassword();
 
         byte[] passwordByte = password.getBytes();
 
@@ -291,6 +250,62 @@ public class Project2 {
 
 
 
+    public static String getUsername(){
+        String username;
+        boolean goodUsername = false;
+        do{
+            System.out.println("Please enter your desired username: ");
+            username = scannerObj.nextLine().trim();
+
+            if(username.length() > 10 || username.isBlank())         //Testing username length
+            {
+                System.out.println(username);
+                System.out.println("Invalid username: Username must be 10 characters or less and cannot be blank");
+                goodUsername = false;
+                continue;
+            }
+            else if(!username.matches("[a-zA-Z]+"))           //Testing username for alphabetic characters only
+            {
+                System.out.println("Invalid username: Username can only contain alphabetic characters");
+                goodUsername = false;
+                continue;
+            }
+            else
+                goodUsername = true;
+        }while(!goodUsername);
+
+        return username;
+    }
+
+
+
+    public static String getPassword(){
+        String password;
+        boolean goodPassword = false;
+        do{
+            System.out.println("Please enter your desired password: ");
+            password = scannerObj.nextLine().trim();
+            if(!password.matches("\\d+"))
+            {
+                System.out.println("Invalid password: Password must be an integer, only containing numbers (0-9)");
+                goodPassword = false;
+                continue;
+            }
+            else if(password.isBlank())
+            {
+                System.out.println("Invalid password: Password cannot be left blank");
+                goodPassword = false;
+                continue;
+            }
+            else
+                goodPassword = true;
+        }while(!goodPassword);
+
+        return password;
+    }
+
+
+
 
     //Creating salt value
     public static byte[] getSalt() throws NoSuchAlgorithmException {
@@ -298,6 +313,52 @@ public class Project2 {
         byte[] salt = new byte[1];
         secureRandom.nextBytes(salt);
         return salt;
+    }
+
+
+
+    //New user from quickprogrammingtips.com
+    private void newUser(String userName, String password) throws Exception {
+        String salt = getSalt2();
+        String encryptedPassword = getEncryptedPassword(password, salt);
+        UserInfo user = new UserInfo();
+    }
+
+    //Modified newUser
+    private static String newSaltUser(String userName, String password) throws Exception {
+        String newUserString;
+
+        String salt = getSalt2();
+        String encryptedPassword = getEncryptedPassword(password, salt);
+
+        newUserString = String.join(" : ", userName, salt, encryptedPassword);
+
+        return newUserString;
+    }
+
+
+    //Second type of getSalt from quickprogrammingtips.com
+    public static String getSalt2() throws NoSuchAlgorithmException {
+        SecureRandom secureRandom = SecureRandom.getInstance("SHA1PRNG");
+        byte[] salt = new byte[1];
+        secureRandom.nextBytes(salt);
+
+        return Base64.getEncoder().encodeToString(salt);
+    }
+
+    //Taken from quickprogrammingtips.com
+    //Gets the password/salt mix
+    public static String getEncryptedPassword(String password, String salt) throws Exception{
+        String algorithm = "PBKDF2WithHmacSHA1";
+        int derivedKeyLength = 160;
+        int iterations = 10000;
+
+        byte[] saltBytes = Base64.getDecoder().decode(salt);
+        KeySpec spec = new PBEKeySpec(password.toCharArray(), saltBytes, iterations, derivedKeyLength);
+        SecretKeyFactory f = SecretKeyFactory.getInstance(algorithm);
+
+        byte[] encBytes = f.generateSecret(spec).getEncoded();
+        return Base64.getEncoder().encodeToString(encBytes);
     }
 
 
@@ -317,19 +378,102 @@ public class Project2 {
 
 
     //Saving information to correct file
-    public static void saveInformation(String fileName, String username, byte[] password){
+    public static void saveInformation(String fileName, String username, byte[] password, byte[] salt){
         FileWriter fw = null;
         BufferedWriter bw = null;
         PrintWriter pw = null;
+
+        if(fileName == "plaintext")        //for file 1
+        {
+            try {
+                fw = new FileWriter(fileName, true);
+                bw = new BufferedWriter(fw);
+                pw = new PrintWriter(bw);
+
+                pw.println(username + " : " + password);
+
+                System.out.println("Account successfully created and saved to file1!");
+                pw.flush();
+
+            } catch (IOException e) {
+                e.printStackTrace();
+            } finally {
+                try {
+                    pw.close();
+                    bw.close();
+                    fw.close();
+                } catch (IOException io) {}
+            }
+        }
+        else if(fileName == "hashed")     //For file 2
+        {
+            try {
+                fw = new FileWriter(fileName, true);
+                bw = new BufferedWriter(fw);
+                pw = new PrintWriter(bw);
+
+                HashMap<String, byte[]> passwords = new HashMap<String, byte[]>();
+                passwords.put(username, password);
+
+                //pw.println(username + " : " + password);
+                pw.println(Arrays.toString(passwords.put(username, password)));    //Saving it as a hashmap entry
+
+                System.out.println("Account successfully created and saved to file2!");
+                pw.flush();
+
+            } catch (IOException e) {
+                e.printStackTrace();
+            } finally {
+                try {
+                    pw.close();
+                    bw.close();
+                    fw.close();
+                } catch (IOException io) {}
+            }
+        }
+        else         //For file 3
+        {
+            try {
+                fw = new FileWriter(fileName, true);
+                bw = new BufferedWriter(fw);
+                pw = new PrintWriter(bw);
+
+                HashMap<String, byte[]> passwords = new HashMap<String, byte[]>();
+                passwords.put(username, password);
+
+                //pw.println(username + " : " + password);
+                pw.println(Arrays.toString(passwords.put(username, password)) + " : " + salt);    //Saving it as a hashmap entry
+
+                System.out.println("Account successfully created and saved to file3!");
+                pw.flush();
+
+            } catch (IOException e) {
+                e.printStackTrace();
+            } finally {
+                try {
+                    pw.close();
+                    bw.close();
+                    fw.close();
+                } catch (IOException io) {}
+            }
+        }
+    }
+
+    //New saveInformation Method
+    public static void saveInformation(String fileName, String userInfoString){
+        FileWriter fw = null;
+        BufferedWriter bw = null;
+        PrintWriter pw = null;
+
 
         try {
             fw = new FileWriter(fileName, true);
             bw = new BufferedWriter(fw);
             pw = new PrintWriter(bw);
 
-            pw.println(username + " : " + password);
+            pw.println(userInfoString);
 
-            System.out.println("Account successfully created and saved!");
+            System.out.println("Account successfully created and saved to file!");
             pw.flush();
 
         } catch (IOException e) {
@@ -341,38 +485,14 @@ public class Project2 {
                 fw.close();
             } catch (IOException io) {}
         }
+
     }
 
 
-    //Saving information to correct file
-    public static void saveFile3(String fileName, String username, byte[] password, byte[] salt){
-        FileWriter fw = null;
-        BufferedWriter bw = null;
-        PrintWriter pw = null;
-
-        try {
-            fw = new FileWriter(fileName, true);
-            bw = new BufferedWriter(fw);
-            pw = new PrintWriter(bw);
-
-            pw.println(username + " : " + salt + " : " + password);
-
-            System.out.println("Account successfully created and saved!");
-            pw.flush();
-
-        } catch (IOException e) {
-            e.printStackTrace();
-        } finally {
-            try {
-                pw.close();
-                bw.close();
-                fw.close();
-            } catch (IOException io) {}
-        }
-    }
 
 
-    public static boolean checkInformation(String fileName, String username, byte[] password){
+
+    public static boolean checkInformation(String fileName, String username, byte[] password) throws Exception {
 //        try {
             Scanner scanner = new Scanner(fileName);
 
@@ -386,6 +506,27 @@ public class Project2 {
                     exists = true;
                 }
             }
+
+        //IN THE MIDDLE OF CHANGING TO authenticateUser FROM WEBSITE
+        if(fileName == "salt")
+        {
+            UserInfo user = userDatabase.get(username);
+            if(user == null)
+                return false;
+            else
+            {
+                String salt = user.userSalt;
+                String calculatedHash = getEncryptedPassword(String.valueOf(password), salt);
+                while(scanner.hasNextLine()) {
+                    String line = scanner.nextLine();
+                    lineNum++;
+                    if(line.contains(username))
+                    {
+
+                    }
+                }
+            }
+        }
 
             if(exists == false)
             {
@@ -401,4 +542,12 @@ public class Project2 {
 
 
 
+}
+
+
+
+class UserInfo {
+    String userEncryptedPassword;
+    String userSalt;
+    String userName;
 }
