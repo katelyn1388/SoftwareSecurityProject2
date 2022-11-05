@@ -11,13 +11,13 @@ import java.security.spec.KeySpec;
 import java.util.*;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import java.util.regex.Pattern;
+
+import static java.util.regex.Pattern.compile;
 
 
 public class Project2 {
     static Scanner scannerObj = new Scanner(System.in);
-
-    private static Map<String, UserInfo> userDatabase = new HashMap<String,UserInfo>();
-
 
     //Creating a cipher
     static Cipher cipher;
@@ -61,7 +61,7 @@ public class Project2 {
 
     //Asking user what they want to do
     public static int actionQuestion(){
-        boolean validInput = false;
+        boolean validInput;
         int choice = 0;
 
         do{
@@ -88,8 +88,7 @@ public class Project2 {
 
     //Getting desired username and password from user and checking for validity
     public static void newAccountQuestions() throws Exception {
-        boolean happy = false;
-        String username, password = null, happyReply;
+        String username, password = null;
 
         System.out.println("Your username must be 10 alphabetic characters or less");
         System.out.println("Your password must only contain numbers (0-9)");
@@ -111,9 +110,16 @@ public class Project2 {
     //Save new account information to files
     public static void newAccountCreation(String username, String password) throws Exception {
 
-        //Saving account info to the first file type
-        byte[] passwordPlain = password.getBytes();
-        saveInformation("plaintext", username, passwordPlain, null);
+        //File type 1
+        //byte[] passwordPlain = password.getBytes();
+        String plaintextFileInfo = String.join(" : ", username, password);
+        saveInformation("plaintext", plaintextFileInfo);
+
+
+        //File type 2 - Need to add something
+
+        String hashedFileInfo = String.join(" : ", username, password);
+        saveInformation("hashed", hashedFileInfo);
 
 
         //Commented out for testing  -  file2
@@ -189,6 +195,8 @@ public class Project2 {
 
 
         //New way
+
+        //File type 3
         String saltFileInfo = newSaltUser(username, password);
         saveInformation("salt", saltFileInfo);
 
@@ -206,15 +214,15 @@ public class Project2 {
 
         password = getPassword();
 
-        byte[] passwordByte = password.getBytes();
+        //byte[] passwordByte = password.getBytes();
 
         //NEED TO HASH THE SECOND AND THIRD BEFORE CHECKING
 
-        boolean firstFile = checkInformation("plaintext", username, passwordByte);
-        boolean secondFile = checkInformation("hashed", username, passwordByte);
-        boolean thirdFile = checkInformation("salt", username, passwordByte);
+        boolean firstFile = checkInformation("plaintext", username, password);
+        boolean secondFile = checkInformation("hashed", username, password);           //All WERE passwordByte getting passed
+        boolean thirdFile = checkInformation("salt", username, password);
 
-        if(firstFile == true)
+        if(firstFile)
         {
             System.out.println("Successfully logged into file 1");
         }
@@ -224,7 +232,7 @@ public class Project2 {
         }
 
 
-        if(secondFile == true)
+        if(secondFile)
         {
             System.out.println("Successfully logged into file 2");
         }
@@ -234,7 +242,7 @@ public class Project2 {
         }
 
 
-        if(thirdFile == true)
+        if(thirdFile)
         {
             System.out.println("Successfully logged into file 3");
         }
@@ -252,7 +260,7 @@ public class Project2 {
 
     public static String getUsername(){
         String username;
-        boolean goodUsername = false;
+        boolean goodUsername;
         do{
             System.out.println("Please enter your desired username: ");
             username = scannerObj.nextLine().trim();
@@ -262,13 +270,11 @@ public class Project2 {
                 System.out.println(username);
                 System.out.println("Invalid username: Username must be 10 characters or less and cannot be blank");
                 goodUsername = false;
-                continue;
             }
             else if(!username.matches("[a-zA-Z]+"))           //Testing username for alphabetic characters only
             {
                 System.out.println("Invalid username: Username can only contain alphabetic characters");
                 goodUsername = false;
-                continue;
             }
             else
                 goodUsername = true;
@@ -281,7 +287,7 @@ public class Project2 {
 
     public static String getPassword(){
         String password;
-        boolean goodPassword = false;
+        boolean goodPassword;
         do{
             System.out.println("Please enter your desired password: ");
             password = scannerObj.nextLine().trim();
@@ -321,7 +327,6 @@ public class Project2 {
     private void newUser(String userName, String password) throws Exception {
         String salt = getSalt2();
         String encryptedPassword = getEncryptedPassword(password, salt);
-        UserInfo user = new UserInfo();
     }
 
     //Modified newUser
@@ -377,88 +382,6 @@ public class Project2 {
     }
 
 
-    //Saving information to correct file
-    public static void saveInformation(String fileName, String username, byte[] password, byte[] salt){
-        FileWriter fw = null;
-        BufferedWriter bw = null;
-        PrintWriter pw = null;
-
-        if(fileName == "plaintext")        //for file 1
-        {
-            try {
-                fw = new FileWriter(fileName, true);
-                bw = new BufferedWriter(fw);
-                pw = new PrintWriter(bw);
-
-                pw.println(username + " : " + password);
-
-                System.out.println("Account successfully created and saved to file1!");
-                pw.flush();
-
-            } catch (IOException e) {
-                e.printStackTrace();
-            } finally {
-                try {
-                    pw.close();
-                    bw.close();
-                    fw.close();
-                } catch (IOException io) {}
-            }
-        }
-        else if(fileName == "hashed")     //For file 2
-        {
-            try {
-                fw = new FileWriter(fileName, true);
-                bw = new BufferedWriter(fw);
-                pw = new PrintWriter(bw);
-
-                HashMap<String, byte[]> passwords = new HashMap<String, byte[]>();
-                passwords.put(username, password);
-
-                //pw.println(username + " : " + password);
-                pw.println(Arrays.toString(passwords.put(username, password)));    //Saving it as a hashmap entry
-
-                System.out.println("Account successfully created and saved to file2!");
-                pw.flush();
-
-            } catch (IOException e) {
-                e.printStackTrace();
-            } finally {
-                try {
-                    pw.close();
-                    bw.close();
-                    fw.close();
-                } catch (IOException io) {}
-            }
-        }
-        else         //For file 3
-        {
-            try {
-                fw = new FileWriter(fileName, true);
-                bw = new BufferedWriter(fw);
-                pw = new PrintWriter(bw);
-
-                HashMap<String, byte[]> passwords = new HashMap<String, byte[]>();
-                passwords.put(username, password);
-
-                //pw.println(username + " : " + password);
-                pw.println(Arrays.toString(passwords.put(username, password)) + " : " + salt);    //Saving it as a hashmap entry
-
-                System.out.println("Account successfully created and saved to file3!");
-                pw.flush();
-
-            } catch (IOException e) {
-                e.printStackTrace();
-            } finally {
-                try {
-                    pw.close();
-                    bw.close();
-                    fw.close();
-                } catch (IOException io) {}
-            }
-        }
-    }
-
     //New saveInformation Method
     public static void saveInformation(String fileName, String userInfoString){
         FileWriter fw = null;
@@ -492,35 +415,37 @@ public class Project2 {
 
 
 
-    public static boolean checkInformation(String fileName, String username, byte[] password) throws Exception {
-//        try {
-            Scanner scanner = new Scanner(fileName);
+    public static boolean checkInformation(String fileName, String usernameInput, String passwordInput) throws Exception {
+        Scanner scanner = new Scanner(fileName);
 
-            boolean exists = false;
-            int lineNum = 0;
+        boolean exists = false;
+        int lineNum = 0;
+        while(scanner.hasNextLine()) {
+            String line = scanner.nextLine();
+            lineNum++;
+            if(Objects.equals(line, usernameInput + " : " + passwordInput))
+            {
+                exists = true;
+            }
+        }
+
+
+        //Authenticating for salt file
+        if(fileName.equals("salt"))
+        {
             while(scanner.hasNextLine()) {
+
                 String line = scanner.nextLine();
                 lineNum++;
-                if(line == username + " : " + password)
+                if(line.contains(usernameInput))
                 {
-                    exists = true;
-                }
-            }
-
-        //IN THE MIDDLE OF CHANGING TO authenticateUser FROM WEBSITE
-        if(fileName == "salt")
-        {
-            UserInfo user = userDatabase.get(username);
-            if(user == null)
-                return false;
-            else
-            {
-                String salt = user.userSalt;
-                String calculatedHash = getEncryptedPassword(String.valueOf(password), salt);
-                while(scanner.hasNextLine()) {
-                    String line = scanner.nextLine();
-                    lineNum++;
-                    if(line.contains(username))
+                    //Splits the line into the username, salt, and hashed, salted password
+                    String[] userInfo = Pattern.compile(" : ").split(line, 3);
+                    //Takes the salt
+                    String salt = userInfo[2];
+                    //Calculating the given password with the salt from the file
+                    String calculatedHash = getEncryptedPassword(passwordInput, salt);
+                    if(Objects.equals(salt, calculatedHash))
                     {
 
                     }
@@ -528,26 +453,12 @@ public class Project2 {
             }
         }
 
-            if(exists == false)
-            {
-                return true;
-            }
-            else
-                return false;
-
-//        } catch(FileNotFoundException e) {
-//            System.out.println("File not found");
-//        }
+        if(!exists)
+            return true;
+        else
+            return false;
     }
 
 
-
 }
 
-
-
-class UserInfo {
-    String userEncryptedPassword;
-    String userSalt;
-    String userName;
-}
