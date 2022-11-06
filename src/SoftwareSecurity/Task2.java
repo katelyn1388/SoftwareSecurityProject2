@@ -17,15 +17,28 @@ public class Task2 {
 
         System.out.println("What password length range would you like? First give me the minimum password length, then the maximum");
         System.out.println("Maximum cannot be bigger than 9");
-        System.out.println("Minimum: ");
-        min = Integer.parseInt(scannerObj.nextLine());
+
+        do{
+            System.out.println("Minimum: ");
+            min = Integer.parseInt(scannerObj.nextLine());
+
+            if(min <= 0 || min >= 9)
+                System.out.println("Minimum must be at least 1 but less than 9");
+            else
+                good = true;
+        }while(!good);
+
+
 
         do{
             System.out.println("Maximum: ");
             max = Integer.parseInt(scannerObj.nextLine());
 
             if(max > 9)
+            {
                 System.out.println("Maximum cannot exceed 9");
+                good = false;
+            }
             else
                 good = true;
         }while(!good);
