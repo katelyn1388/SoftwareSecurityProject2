@@ -8,6 +8,7 @@ import java.io.*;
 import java.nio.charset.StandardCharsets;
 import java.security.*;
 import java.security.SecureRandom;
+import java.security.spec.InvalidKeySpecException;
 import java.security.spec.KeySpec;
 import java.util.*;
 import java.util.logging.Level;
@@ -133,7 +134,7 @@ public class Project2 {
 
 
         //File type 2
-        String hashedPasswordString = hashPasswordFile2(password);
+        String hashedPasswordString = getHashedPassword2(password);
 
         //Combining the username and password into one string and sending it to file
         String hashedFileInfo = String.join(" : ", username, hashedPasswordString);
@@ -147,32 +148,65 @@ public class Project2 {
     }
 
 
-    public String hashPasswordFile2(String passwordPlain)
-            throws InvalidKeyException, IllegalBlockSizeException, BadPaddingException, UnsupportedEncodingException
-    {
+    public String getHashedPassword(String passwordPlain)
+            throws InvalidKeyException, IllegalBlockSizeException, BadPaddingException, UnsupportedEncodingException, NoSuchAlgorithmException {
         SecureRandom secureRandom = new SecureRandom();
         int keyBitSize = 256;
         keyGenerator.init(keyBitSize, secureRandom);
 
+
         SecretKey hashedKey = keyGenerator.generateKey();
         cipher.init(Cipher.ENCRYPT_MODE, hashedKey);
 
-                //System.out.println("Before byte conversion: " + passwordPlain);
         //Changing password into byte array and encrypting it
         byte[] passwordBytes = passwordPlain.getBytes("UTF-8");
-                //System.out.println("Before encryption: " + passwordBytes);
         byte[] hashedPassword = cipher.doFinal(passwordBytes);
-
-                //System.out.println("After encryption: " + hashedPassword);
-
 
         //Changing encrypted byte array password into string
         String hashedPasswordString = new String(hashedPassword, StandardCharsets.ISO_8859_1);
-              //System.out.println("After conversion to string: " + hashedPasswordString);
 
-
-        return hashedPasswordString;
+        //return hashedPasswordString;
+        return Base64.getEncoder().encodeToString(hashedPassword);
     }
+
+
+    public String getHashedPassword2(String passwordInput)
+            throws NoSuchAlgorithmException, UnsupportedEncodingException {
+        MessageDigest messageDigest = MessageDigest.getInstance("SHA-256");
+
+        byte[] passwordByte = passwordInput.getBytes("UTF-8");
+
+        //Password is passed to message digest object
+        messageDigest.update(passwordByte);
+
+        byte[] digest = messageDigest.digest();
+
+        return Base64.getEncoder().encodeToString(digest);
+    }
+
+
+
+//
+//    public String getDecodedPassword(String hashedPassword)
+//            throws InvalidKeyException, IllegalBlockSizeException, BadPaddingException, UnsupportedEncodingException
+//    {
+//        SecureRandom secureRandom = new SecureRandom();
+//        int keyBitSize = 256;
+//        keyGenerator.init(keyBitSize, secureRandom);
+//
+//        SecretKey hashedKey = keyGenerator.generateKey();
+//        cipher.init(Cipher.DECRYPT_MODE, hashedKey);
+//
+//        //Changing password into byte array and encrypting it
+//        byte[] passwordBytes = hashedPassword.getBytes("UTF-8");
+//        byte[] decryptedPassword = cipher.doFinal(passwordBytes);
+//
+//        //Changing encrypted byte array password into string
+//        //String hashedPasswordString = new String(hashedPassword, StandardCharsets.ISO_8859_1);
+//
+//        //return hashedPasswordString;
+//        return Base64.getEncoder().encodeToString(decryptedPassword);
+//    }
 
 
 
@@ -186,13 +220,12 @@ public class Project2 {
         password = getPassword();
 
         //Hashing the input password to check against hashed password in file22
-        String hashedPasswordInput = hashPasswordFile2(password);
-        System.out.println("Output from authenticate hashing given password: " + hashedPasswordInput);     //Just for testing
+        String hashedPasswordInput = getHashedPassword2(password);
         //byte[] hashedPasswordInput = hashPasswordFile2(password);
-
+        System.out.println("Inside authenticate, password input after hashing: " + hashedPasswordInput);
 
         boolean firstFile = checkInformation("plaintext", username, password);
-        boolean secondFile = checkInformation("hashed", username, hashedPasswordInput);           //All WERE passwordByte getting passed
+        boolean secondFile = checkInformation("hashed", username, hashedPasswordInput);
         boolean thirdFile = checkInformation("salt", username, password);
 
         if(firstFile)
@@ -292,7 +325,6 @@ public class Project2 {
     }
 
 
-    //Second type of getSalt from quickprogrammingtips.com
     public String getSalt2() throws NoSuchAlgorithmException {
         SecureRandom secureRandom = SecureRandom.getInstance("SHA1PRNG");
         byte[] salt = new byte[1];
@@ -301,7 +333,6 @@ public class Project2 {
         return Base64.getEncoder().encodeToString(salt);
     }
 
-    //Taken from quickprogrammingtips.com
     //Gets the password/salt mix
     public String getEncryptedPassword(String password, String salt) throws Exception{
         String algorithm = "PBKDF2WithHmacSHA1";
@@ -381,15 +412,13 @@ public class Project2 {
         Scanner scanner = new Scanner(fileName);
         //New file reading version
         BufferedReader reader;
-
-        System.out.println("Inside of checkInformation");    //Just for testing
+        reader = new BufferedReader(new FileReader(fileName));
+        String line = reader.readLine();
 
         boolean exists = false;
         int lineNum = 0;
-        if(fileName.equals("plaintext") || fileName.equals("hashed"))        //Checking plaintext or hashed file
+        if(fileName.equals("plaintext"))        //Checking plaintext or hashed file
         {
-            reader = new BufferedReader(new FileReader(fileName));
-            String line = reader.readLine();
             while(line != null)
             {
                 String compareString = String.join(" : ", usernameInput, passwordInput);
@@ -405,10 +434,32 @@ public class Project2 {
                 }
             }
             reader.close();
+        } else if(fileName.equals("hashed"))
+        {
+            while(line != null)
+            {
+                String[] userInfo = Pattern.compile(" : ").split(line, 2);
+                System.out.println("Hashed password from file: " + userInfo[1]);
+                System.out.println("Hashed password from user: " + passwordInput);
+
+                if(userInfo[0].equalsIgnoreCase(usernameInput))
+                {
+                    if(userInfo[1].equalsIgnoreCase(passwordInput))
+                    {
+                        exists = true;
+                        break;
+                    }
+                }
+                else
+                {
+                    line = reader.readLine();
+                    exists = false;
+                }
+            }
+            reader.close();
+
         } else    //Checking salt file
         {
-            reader = new BufferedReader(new FileReader(fileName));
-            String line = reader.readLine();
             while (line != null) {
                 String[] userInfo = Pattern.compile(" : ").split(line, 3);
                 String userNameFromFile = userInfo[0];
@@ -416,13 +467,10 @@ public class Project2 {
                 if (userNameFromFile.equalsIgnoreCase(usernameInput)) {
                     //Takes the salt
                     String salt = userInfo[1];
-                    System.out.println("Salt from file: " + salt);
                     //Takes the hashed, salted password
                     String filePassword = userInfo[2];
-                    System.out.println("Hashed password from salt file: " + filePassword);
                     //Calculating the given password with the salt from the file
                     String calculatedHash = getEncryptedPassword(passwordInput, salt);
-                    System.out.println("New hashed password from user input and salt from file: " + calculatedHash);
                     if (filePassword.equals(calculatedHash)) {
                         exists = true;
                         break;
