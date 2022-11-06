@@ -123,6 +123,7 @@ public class Project2 {
     }
 
 
+    //Hashes password with message digest
     public String getHashedPassword(String passwordInput)
             throws NoSuchAlgorithmException, UnsupportedEncodingException {
         MessageDigest messageDigest = MessageDigest.getInstance("SHA-256");
@@ -136,32 +137,6 @@ public class Project2 {
 
         return Base64.getEncoder().encodeToString(digest);
     }
-
-
-
-//
-//    public String getDecodedPassword(String hashedPassword)
-//            throws InvalidKeyException, IllegalBlockSizeException, BadPaddingException, UnsupportedEncodingException
-//    {
-//        SecureRandom secureRandom = new SecureRandom();
-//        int keyBitSize = 256;
-//        keyGenerator.init(keyBitSize, secureRandom);
-//
-//        SecretKey hashedKey = keyGenerator.generateKey();
-//        cipher.init(Cipher.DECRYPT_MODE, hashedKey);
-//
-//        //Changing password into byte array and encrypting it
-//        byte[] passwordBytes = hashedPassword.getBytes("UTF-8");
-//        byte[] decryptedPassword = cipher.doFinal(passwordBytes);
-//
-//        //Changing encrypted byte array password into string
-//        //String hashedPasswordString = new String(hashedPassword, StandardCharsets.ISO_8859_1);
-//
-//        //return hashedPasswordString;
-//        return Base64.getEncoder().encodeToString(decryptedPassword);
-//    }
-
-
 
 
 
@@ -243,7 +218,7 @@ public class Project2 {
             password = scannerObj.nextLine().trim();
             if(!password.matches("\\d+"))
             {
-                System.out.println("Invalid password: Password must be an integer, only containing numbers (0-9)");
+                System.out.println("Invalid password: Password must be an integer, only containing digits (0-9)");
                 goodPassword = false;
                 continue;
             }
@@ -313,7 +288,7 @@ public class Project2 {
 
             pw.println(userInfoString);
 
-            System.out.println("Account successfully created and saved to file!");
+            //System.out.println("Account successfully created and saved to file!");
             pw.flush();
 
         } catch (IOException e) {
@@ -327,34 +302,6 @@ public class Project2 {
         }
 
     }
-
-
-//    public boolean checkHashedFile(String fileName, String usernameInput, byte[] passwordInput) throws Exception
-//    {
-//        boolean match = false;
-//
-//        int lineNum = 0;
-//        BufferedReader reader;
-//        reader = new BufferedReader(new FileReader(fileName));
-//        String line = reader.readLine();
-//        while(line != null)
-//        {
-//            String compareString = String.join(" : ", usernameInput, passwordInput);
-//            if(line.equalsIgnoreCase(compareString))
-//            {
-//                match = true;
-//                break;
-//            }
-//            else
-//            {
-//                line = reader.readLine();
-//                match = false;
-//            }
-//        }
-//        reader.close();
-//
-//        return match;
-//    }
 
 
 
