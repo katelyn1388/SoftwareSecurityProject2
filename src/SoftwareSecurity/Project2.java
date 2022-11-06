@@ -16,12 +16,8 @@ import java.util.regex.Pattern;
 public class Project2 {
     Scanner scannerObj = new Scanner(System.in);
 
-    Cipher cipher = Cipher.getInstance("AES/CBC/PKCS5Padding");
-
-    KeyGenerator keyGenerator = KeyGenerator.getInstance("AES");
-
-    public Project2() throws NoSuchAlgorithmException, NoSuchPaddingException {
-    }
+//    public Project2() throws NoSuchAlgorithmException, NoSuchPaddingException {
+//    }
 
 
     public static void main(String[] args) throws Exception {
@@ -306,8 +302,6 @@ public class Project2 {
 
 
     public boolean checkInformation(String fileName, String usernameInput, String passwordInput) throws Exception {
-        Scanner scanner = new Scanner(fileName);
-        //New file reading version
         BufferedReader reader;
         reader = new BufferedReader(new FileReader(fileName));
         String line = reader.readLine();
