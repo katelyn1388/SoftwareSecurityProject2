@@ -9,7 +9,7 @@ public class Task2 {
     public static void main(String[] args) throws Exception {
         Project2 project2 = new Project2();
 
-        int leftLimit = 97, rightLimit = 122, leftIntLimit = 48, rightIntLimit = 57, userNameLength = 10;
+        int leftLimit = 97, rightLimit = 122, leftIntLimit = 48, rightIntLimit = 57, userNameMax = 10, userNameMin = 3;
         boolean good = false;
         Random random = new Random();
 
@@ -37,6 +37,7 @@ public class Task2 {
 
         for(int i = 0; i < accountsNum; i++)
         {
+            int userNameLength = random.nextInt(userNameMax - userNameMin + 1) + userNameMin;
             //Creating random usernames
             String userNameString = random.ints(leftLimit, rightLimit + 1)
                     .limit(userNameLength)
@@ -53,11 +54,9 @@ public class Task2 {
 
             //Sending random username and password to task1
             project2.newAccountCreation(userNameString, passwordString);
-
-            System.out.println("Accounts created!");
-
         }
 
+        System.out.println("Accounts created!");
 
     }
 
