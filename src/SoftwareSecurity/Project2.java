@@ -8,40 +8,15 @@ import java.io.*;
 import java.nio.charset.StandardCharsets;
 import java.security.*;
 import java.security.SecureRandom;
-import java.security.spec.InvalidKeySpecException;
 import java.security.spec.KeySpec;
 import java.util.*;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 import java.util.regex.Pattern;
 
 
 public class Project2 {
     Scanner scannerObj = new Scanner(System.in);
 
-    //Creating a cipher
-//    Cipher cipher;
-//    {
-//        try {
-//            cipher = Cipher.getInstance("AES/CBC/PKCS5Padding");
-//        } catch (NoSuchAlgorithmException e) {
-//            e.printStackTrace();
-//        } catch (NoSuchPaddingException e) {
-//            e.printStackTrace();
-//        }
-//    }
     Cipher cipher = Cipher.getInstance("AES/CBC/PKCS5Padding");
-
-
-//    //Creating a key
-//    KeyGenerator keyGenerator;
-//    {
-//        try {
-//            keyGenerator = KeyGenerator.getInstance("AES");
-//        } catch (NoSuchAlgorithmException e) {
-//            e.printStackTrace();
-//        }
-//    }
 
     KeyGenerator keyGenerator = KeyGenerator.getInstance("AES");
 
@@ -134,7 +109,7 @@ public class Project2 {
 
 
         //File type 2
-        String hashedPasswordString = getHashedPassword2(password);
+        String hashedPasswordString = getHashedPassword(password);
 
         //Combining the username and password into one string and sending it to file
         String hashedFileInfo = String.join(" : ", username, hashedPasswordString);
@@ -148,29 +123,7 @@ public class Project2 {
     }
 
 
-    public String getHashedPassword(String passwordPlain)
-            throws InvalidKeyException, IllegalBlockSizeException, BadPaddingException, UnsupportedEncodingException, NoSuchAlgorithmException {
-        SecureRandom secureRandom = new SecureRandom();
-        int keyBitSize = 256;
-        keyGenerator.init(keyBitSize, secureRandom);
-
-
-        SecretKey hashedKey = keyGenerator.generateKey();
-        cipher.init(Cipher.ENCRYPT_MODE, hashedKey);
-
-        //Changing password into byte array and encrypting it
-        byte[] passwordBytes = passwordPlain.getBytes("UTF-8");
-        byte[] hashedPassword = cipher.doFinal(passwordBytes);
-
-        //Changing encrypted byte array password into string
-        String hashedPasswordString = new String(hashedPassword, StandardCharsets.ISO_8859_1);
-
-        //return hashedPasswordString;
-        return Base64.getEncoder().encodeToString(hashedPassword);
-    }
-
-
-    public String getHashedPassword2(String passwordInput)
+    public String getHashedPassword(String passwordInput)
             throws NoSuchAlgorithmException, UnsupportedEncodingException {
         MessageDigest messageDigest = MessageDigest.getInstance("SHA-256");
 
@@ -219,10 +172,7 @@ public class Project2 {
         username = getUsername();
         password = getPassword();
 
-        //Hashing the input password to check against hashed password in file22
-        String hashedPasswordInput = getHashedPassword2(password);
-        //byte[] hashedPasswordInput = hashPasswordFile2(password);
-        System.out.println("Inside authenticate, password input after hashing: " + hashedPasswordInput);
+        String hashedPasswordInput = getHashedPassword(password);
 
         boolean firstFile = checkInformation("plaintext", username, password);
         boolean secondFile = checkInformation("hashed", username, hashedPasswordInput);
@@ -439,8 +389,6 @@ public class Project2 {
             while(line != null)
             {
                 String[] userInfo = Pattern.compile(" : ").split(line, 2);
-                System.out.println("Hashed password from file: " + userInfo[1]);
-                System.out.println("Hashed password from user: " + passwordInput);
 
                 if(userInfo[0].equalsIgnoreCase(usernameInput))
                 {
